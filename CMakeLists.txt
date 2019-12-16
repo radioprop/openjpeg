@@ -22,8 +22,15 @@ if(NOT OPENJPEG_NAMESPACE)
 endif()
 # In all cases:
 #string(TOLOWER ${OPENJPEG_NAMESPACE} OPENJPEG_LIBRARY_NAME)
-set(OPENJPEG_LIBRARY_NAME openjp2)
-
+if(${EMSCRIPTEN})
+  set(OPENJPEG_LIBRARY_NAME openjp2_static)
+  set(CMAKE_C_FLAGS " -s SIMD=1 -lidbfs.js")
+  CMAKE_POLICY(SET CMP0017 OLD)
+  #set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  set(OPJ_USE_THREADS OFF)
+else()
+  set(OPENJPEG_LIBRARY_NAME openjp2)
+endif()
 project(${OPENJPEG_NAMESPACE})
 
 # Do full dependency headers.
@@ -390,7 +397,7 @@ if(BUILD_PKGCONFIG_FILES)
   endif()
 endif()
 
-#-----------------------------------------------------------------------------
+
 
 # build our version of astyle
 SET (WITH_ASTYLE FALSE CACHE BOOL "If you plan to contribute you should reindent with scripts/prepare-commit.sh (using 'our' astyle)")

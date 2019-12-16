@@ -55,6 +55,9 @@
 #ifdef __AVX2__
 #include <immintrin.h>
 #endif
+#ifdef __EMSCRIPTEN__
+#include <wasm_simd128.h>
+#endif
 
 #if defined(__GNUC__)
 #pragma GCC poison malloc calloc realloc free
@@ -590,7 +593,7 @@ static void opj_idwt53_h(const opj_dwt_t *dwt,
 #endif
 }
 
-#if (defined(__SSE2__) || defined(__AVX2__)) && !defined(STANDARD_SLOW_VERSION)
+#if (defined(__SSE2__) || defined(__AVX2__)) || defined(__EMSCRIPTEN__) && !defined(STANDARD_SLOW_VERSION)
 
 /* Conveniency macros to improve the readabilty of the formulas */
 #if __AVX2__
@@ -603,7 +606,7 @@ static void opj_idwt53_h(const opj_dwt_t *dwt,
 #define ADD(x,y)    _mm256_add_epi32((x),(y))
 #define SUB(x,y)    _mm256_sub_epi32((x),(y))
 #define SAR(x,y)    _mm256_srai_epi32((x),(y))
-#else
+#elif __SSE2__
 #define VREG        __m128i
 #define LOAD_CST(x) _mm_set1_epi32(x)
 #define LOAD(x)     _mm_load_si128((const VREG*)(x))
@@ -613,6 +616,17 @@ static void opj_idwt53_h(const opj_dwt_t *dwt,
 #define ADD(x,y)    _mm_add_epi32((x),(y))
 #define SUB(x,y)    _mm_sub_epi32((x),(y))
 #define SAR(x,y)    _mm_srai_epi32((x),(y))
+#elif __EMSCRIPTEN__
+#define VREG            v128_t
+#define VREGU           __v128_u
+#define LOAD_CST(x)     wasm_i32x4_const((x),(x),(x),(x))
+#define LOAD(x)         wasm_v128_load((const VREG*) (x) )
+#define LOADU(x)        wasm_v128_load((const VREGU*) (x))
+#define STORE(x,y)      wasm_v128_store((VREG*)x,(y))
+#define STOREU(x,y)     wasm_v128_store((VREGU *)(x),(y))
+#define ADD(x,y)        wasm_i32x4_add((x),(y))
+#define SUB(x,y)        wasm_i32x4_sub((x),(y))
+#define SAR(x,y)        wasm_i32x4_shr((x),(y))
 #endif
 #define ADD3(x,y,z) ADD(ADD(x,y),z)
 
